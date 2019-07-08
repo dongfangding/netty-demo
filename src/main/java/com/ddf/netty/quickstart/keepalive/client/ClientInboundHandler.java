@@ -1,4 +1,4 @@
-package com.ddf.netty.quickstart.http.client;
+package com.ddf.netty.quickstart.keepalive.client;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;

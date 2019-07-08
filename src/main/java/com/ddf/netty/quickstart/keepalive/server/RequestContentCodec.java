@@ -1,4 +1,4 @@
-package com.ddf.netty.quickstart.http.server;
+package com.ddf.netty.quickstart.keepalive.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;

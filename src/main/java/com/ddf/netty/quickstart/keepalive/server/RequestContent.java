@@ -1,4 +1,4 @@
-package com.ddf.netty.quickstart.http.server;
+package com.ddf.netty.quickstart.keepalive.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,7 +37,7 @@ public class RequestContent {
      * @param content
      * @return
      */
-    public static RequestContent rqeuest(String content) {
+    public static RequestContent request(String content) {
         return new RequestContent(Type.REQUEST, Cmd.ECHO, content);
     }
 
@@ -95,7 +95,6 @@ public class RequestContent {
     public void setContent(String content) {
         this.content = content;
     }
-
 
     /**
      * 连接请求类型

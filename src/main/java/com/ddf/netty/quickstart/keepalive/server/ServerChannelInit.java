@@ -1,4 +1,4 @@
-package com.ddf.netty.quickstart.http.server;
+package com.ddf.netty.quickstart.keepalive.server;
 
 import io.netty.channel.*;
 import io.netty.handler.timeout.IdleStateEvent;

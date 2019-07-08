@@ -1,6 +1,6 @@
-package com.ddf.netty.quickstart.http.client;
+package com.ddf.netty.quickstart.keepalive.client;
 
-import com.ddf.netty.quickstart.http.server.RequestContent;
+import com.ddf.netty.quickstart.keepalive.server.RequestContent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
@@ -11,6 +11,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -95,7 +97,6 @@ public class HttpClient {
         try {
             System.out.println("客户端尝试主动close..............");
             channel.closeFuture().addListener(ChannelFutureListener.CLOSE);
-            executorService.shutdown();
         } finally {
             try {
                 worker.shutdownGracefully().sync();
@@ -107,12 +108,30 @@ public class HttpClient {
 
 
     public static void main(String[] args) throws InterruptedException, JsonProcessingException {
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        HttpClient client = new HttpClient("localhost", 8089, executorService);
-        client.connect();
-        ObjectMapper objectMapper = new ObjectMapper();
-        client.write(objectMapper.writeValueAsString(RequestContent.rqeuest("我是一个粉刷匠")));
-        Thread.sleep(10000);
-        client.close();
+        ExecutorService executorService = Executors.newFixedThreadPool(20);
+        for (int i = 0; i < 10; i++) {
+            executorService.execute(() -> {
+                HttpClient client = new HttpClient("localhost", 8089, executorService);
+                client.connect();
+                ObjectMapper objectMapper = new ObjectMapper();
+                Map<String, String> contentMap = new HashMap<>();
+                contentMap.put("deviceId", "HUAWEI-MATE9");
+                contentMap.put("from", "13185679963");
+                contentMap.put("to", "15564325896");
+                contentMap.put("timestamp", System.currentTimeMillis() + "");
+                contentMap.put("content", "晚上来家吃饭");
+                try {
+                    client.write(objectMapper.writeValueAsString(RequestContent.request(objectMapper.writeValueAsString(contentMap))));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                client.close();
+            });
+        }
     }
 }

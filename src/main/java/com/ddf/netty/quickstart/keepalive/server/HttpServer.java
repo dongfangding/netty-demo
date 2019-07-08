@@ -1,4 +1,4 @@
-package com.ddf.netty.quickstart.http.server;
+package com.ddf.netty.quickstart.keepalive.server;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -38,7 +38,6 @@ public class HttpServer {
             if (future.isSuccess()) {
                 System.out.println("服务端启动成功....");
             }
-            // 等待服务器连接关闭
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -53,6 +52,7 @@ public class HttpServer {
     }
 
     public static void main(String[] args) {
+        new Thread(new ChannelStoreSyncTask()).start();
         new HttpServer(8089).start();
     }
 }
