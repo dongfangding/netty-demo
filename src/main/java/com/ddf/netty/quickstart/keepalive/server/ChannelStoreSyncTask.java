@@ -55,6 +55,7 @@ public class ChannelStoreSyncTask implements Runnable {
                             while (queue.peek() != null) {
                                 RequestContent content = queue.poll();
                                 file.write(objectMapper.writeValueAsBytes(content));
+                                file.write(System.lineSeparator().getBytes());
                             }
                             file.close();
                             if (v.isSyncDone()) {

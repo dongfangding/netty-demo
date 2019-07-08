@@ -13,11 +13,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
  * @author dongfang.ding
  * @date 2019/7/5 10:19
  */
-public class HttpServer {
+public class TCPServer {
 
     private int port;
 
-    public HttpServer(int port) {
+    public TCPServer(int port) {
         this.port = port;
     }
 
@@ -53,6 +53,6 @@ public class HttpServer {
 
     public static void main(String[] args) {
         new Thread(new ChannelStoreSyncTask()).start();
-        new HttpServer(8089).start();
+        new TCPServer(8089).start();
     }
 }

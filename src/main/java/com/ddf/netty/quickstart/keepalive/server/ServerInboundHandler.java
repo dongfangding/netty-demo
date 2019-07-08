@@ -42,11 +42,18 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<RequestCon
         ChannelInfo.inactive(ctx.channel());
     }
 
+
+    /**
+     * 如果是聊天室的功能，其实就是服务端收到消息之后，然后再由服务端向所有连接的客户端转发这个消息而已
+     * @param ctx
+     * @param msg
+     * @throws JsonProcessingException
+     */
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, RequestContent msg) throws JsonProcessingException {
         putMessage(ctx.channel(), msg);
         System.out.println("接收到客户端[" + ctx.channel().remoteAddress() + "]发送的数据: " + RequestContent.serial(msg));
-        ctx.writeAndFlush(RequestContent.response(msg.getContent()));
+        ctx.writeAndFlush(RequestContent.response(msg));
     }
 
     @Override

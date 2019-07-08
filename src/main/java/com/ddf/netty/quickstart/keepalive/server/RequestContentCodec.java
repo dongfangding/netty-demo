@@ -31,6 +31,7 @@ public class RequestContentCodec extends ByteToMessageCodec<Object> {
 
     /**
      * 将客户端传入的解码成服务端使用的{@link RequestContent}
+     * 注意TCP的粘包和拆包问题，这里已经使用了{@link io.netty.handler.codec.LineBasedFrameDecoder}解码器来解决，要求客户端比如以换行符结尾
      * @param ctx
      * @param in
      * @param out
@@ -38,11 +39,13 @@ public class RequestContentCodec extends ByteToMessageCodec<Object> {
      */
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        // FIXME 如何避免黏包的问题？
         ObjectMapper objectMapper = new ObjectMapper();
         int length = in.readableBytes();
         byte[] array = new byte[length];
         in.readBytes(array);
-        out.add(objectMapper.readValue(array, RequestContent.class));
+        RequestContent requestContent = objectMapper.readValue(array, RequestContent.class);
+        // 以客户端为准还是服务端自己设置？
+        requestContent.setRequestTime(System.currentTimeMillis());
+        out.add(requestContent);
     }
 }

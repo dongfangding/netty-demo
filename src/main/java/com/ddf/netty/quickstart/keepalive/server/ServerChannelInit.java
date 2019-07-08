@@ -1,6 +1,7 @@
 package com.ddf.netty.quickstart.keepalive.server;
 
 import io.netty.channel.*;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 
@@ -19,10 +20,11 @@ public class ServerChannelInit extends ChannelInitializer<Channel> {
     protected void initChannel(Channel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
         if (pipeline != null) {
-            pipeline.addLast(new RequestContentCodec())
+            // 添加换行符解码器，以及自定义编解码器,客户端每次传输数据必须以"\r\n"结尾并且符合自定义解码器规则
+            pipeline.addLast(new LineBasedFrameDecoder(1024)).addLast(new RequestContentCodec())
                     .addLast(new ServerOutboundHandler()).addLast(new ServerInboundHandler())
                     // IdleStateHandler 将通过 IdleStateEvent 调用 userEventTriggered ，如果连接没有接收或发送数据超过60秒钟
-                    .addLast(new IdleStateHandler(0, 0, 10, TimeUnit.SECONDS))
+                    .addLast(new IdleStateHandler(0, 0, 60, TimeUnit.SECONDS))
                     .addLast(new HeartbeatHandler());
         }
     }

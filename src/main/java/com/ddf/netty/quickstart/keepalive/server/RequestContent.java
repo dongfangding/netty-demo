@@ -1,13 +1,21 @@
 package com.ddf.netty.quickstart.keepalive.server;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.util.UUID;
 
 /**
  * @author dongfang.ding
  * @date 2019/7/5 14:59
  */
 public class RequestContent {
+
+    /**
+     * 唯一标识次数请求
+     */
+    private String requestId;
     /**
      * 1 请求 2 应答
      */
@@ -16,19 +24,33 @@ public class RequestContent {
      * 本次请求要做什么事情
      */
     private String cmd;
+
+    /**
+     * 请求时间
+     */
+    @JsonIgnore
+    private Long requestTime;
+
+    /**
+     * 响应时间
+     */
+    @JsonIgnore
+    private Long responseTime;
     /**
      * 主体数据
      */
-    private String content;
+    private String body;
 
     public RequestContent() {
 
     }
 
-    public RequestContent(Type type, Cmd cmd, String content) {
+    public RequestContent(String requestId, Type type, Cmd cmd, Long requestTime, String content) {
+        this.requestId = requestId;
         this.type = type.name();
         this.cmd = cmd.name();
-        this.content = content;
+        this.requestTime = requestTime;
+        this.body = content;
     }
 
     /**
@@ -38,17 +60,23 @@ public class RequestContent {
      * @return
      */
     public static RequestContent request(String content) {
-        return new RequestContent(Type.REQUEST, Cmd.ECHO, content);
+        return new RequestContent(UUID.randomUUID().toString(), Type.REQUEST, Cmd.ECHO, System.currentTimeMillis(), content);
     }
 
     /**
      * 服务端应答客户端
      *
-     * @param content
+     * @param requestContent
      * @return
      */
-    public static RequestContent response(String content) {
-        return new RequestContent(Type.RESPONSE, Cmd.ECHO, content);
+    public static RequestContent response(RequestContent requestContent) {
+        RequestContent response = new RequestContent();
+        response.setType(Type.RESPONSE.name());
+        response.setRequestId(requestContent.getRequestId());
+        response.setCmd(requestContent.getCmd());
+        response.setResponseTime(System.currentTimeMillis());
+        response.setBody("200");
+        return response;
     }
 
     /**
@@ -57,7 +85,7 @@ public class RequestContent {
      * @return
      */
     public static RequestContent heart() {
-        return new RequestContent(Type.REQUEST, Cmd.ECHO, "ping");
+        return new RequestContent(UUID.randomUUID().toString(), Type.REQUEST, Cmd.ECHO, System.currentTimeMillis(), "ping");
     }
 
     /**
@@ -88,12 +116,36 @@ public class RequestContent {
         this.cmd = cmd;
     }
 
-    public String getContent() {
-        return content;
+    public String getBody() {
+        return body;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setBody(String body) {
+        this.body = body;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public Long getRequestTime() {
+        return requestTime;
+    }
+
+    public void setRequestTime(long requestTime) {
+        this.requestTime = requestTime;
+    }
+
+    public Long getResponseTime() {
+        return responseTime;
+    }
+
+    public void setResponseTime(long responseTime) {
+        this.responseTime = responseTime;
     }
 
     /**

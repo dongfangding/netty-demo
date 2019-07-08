@@ -1,6 +1,5 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
-import com.ddf.netty.quickstart.keepalive.server.RequestContent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
@@ -13,6 +12,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
  * @author dongfang.ding
  * @date 2019/7/5 11:12
  */
-public class HttpClient {
+public class TCPClient {
 
     private String host;
     private int port;
@@ -41,7 +41,7 @@ public class HttpClient {
     private ExecutorService executorService;
     private volatile NioEventLoopGroup worker;
 
-    public HttpClient(String host, int port, ExecutorService executorService) {
+    public TCPClient(String host, int port, ExecutorService executorService) {
         this.host = host;
         this.port = port;
         this.executorService = executorService;
@@ -108,10 +108,10 @@ public class HttpClient {
 
 
     public static void main(String[] args) throws InterruptedException, JsonProcessingException {
-        ExecutorService executorService = Executors.newFixedThreadPool(20);
-        for (int i = 0; i < 10; i++) {
+        ExecutorService executorService = Executors.newFixedThreadPool(200);
+        /*for (int i = 0; i < 10; i++) {
             executorService.execute(() -> {
-                HttpClient client = new HttpClient("localhost", 8089, executorService);
+                TCPClient client = new TCPClient("localhost", 8089, executorService);
                 client.connect();
                 ObjectMapper objectMapper = new ObjectMapper();
                 Map<String, String> contentMap = new HashMap<>();
@@ -132,6 +132,23 @@ public class HttpClient {
                 }
                 client.close();
             });
+        }*/
+        TCPClient client = new TCPClient("localhost", 8089, executorService);
+        client.connect();
+        ObjectMapper objectMapper = new ObjectMapper();
+        for (int i = 0; i < 100; i++) {
+            Map<String, Object> requestMap = new HashMap<>();
+            requestMap.put("requestId", UUID.randomUUID().toString());
+            requestMap.put("type", "REQUEST");
+            requestMap.put("cmd", "ECHO");
+            Map<String, String> contentMap = new HashMap<>();
+            contentMap.put("deviceId", "HUAWEI-MATE9");
+            contentMap.put("from", "13185679963");
+            contentMap.put("to", "15564325896");
+            contentMap.put("timestamp", System.currentTimeMillis() + "");
+            contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
+            requestMap.put("body", objectMapper.writeValueAsString(contentMap));
+            client.write(objectMapper.writeValueAsString(requestMap) + "\r\n");
         }
     }
 }
