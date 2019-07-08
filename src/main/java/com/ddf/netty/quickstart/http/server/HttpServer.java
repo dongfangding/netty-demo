@@ -1,4 +1,4 @@
-package com.ddf.netty.quickstart.keepalive.server;
+package com.ddf.netty.quickstart.http.server;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -7,19 +7,17 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
-import java.util.concurrent.Executors;
-
 /**
- * http协议服务端
+ * HTTP服务器
  *
  * @author dongfang.ding
- * @date 2019/7/5 10:19
+ * @date 2019/7/8 16:53
  */
-public class TCPServer {
+public class HttpServer {
 
     private int port;
 
-    public TCPServer(int port) {
+    public HttpServer(int port) {
         this.port = port;
     }
 
@@ -31,7 +29,6 @@ public class TCPServer {
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 1024)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childHandler(new ServerChannelInit());
         ChannelFuture future;
         try {
@@ -40,7 +37,6 @@ public class TCPServer {
             if (future.isSuccess()) {
                 System.out.println("服务端启动成功....");
             }
-            Executors.newSingleThreadExecutor().execute(new ChannelStoreSyncTask());
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -55,6 +51,6 @@ public class TCPServer {
     }
 
     public static void main(String[] args) {
-        new TCPServer(8089).start();
+        new HttpServer(8088).start();
     }
 }

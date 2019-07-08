@@ -1,7 +1,5 @@
-package com.ddf.netty.quickstart.keepalive.client;
+package com.ddf.netty.quickstart.http.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -10,18 +8,16 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * HTTP客户端
  *
  * @author dongfang.ding
- * @date 2019/7/5 11:12
+ * @date 2019/7/8 17:01
  */
-public class TCPClient {
+public class HttpClient {
 
     private String host;
     private int port;
@@ -29,7 +25,7 @@ public class TCPClient {
     private ExecutorService executorService;
     private volatile NioEventLoopGroup worker;
 
-    public TCPClient(String host, int port, ExecutorService executorService) {
+    public HttpClient(String host, int port, ExecutorService executorService) {
         this.host = host;
         this.port = port;
         this.executorService = executorService;
@@ -50,6 +46,7 @@ public class TCPClient {
                     System.out.println("连接到服务端端成功....");
                 }
                 channel = future.channel();
+                channel.writeAndFlush("haha");
                 System.out.println("客户端初始化完成............");
                 // 这里会一直与服务端保持连接，直到服务端断掉才会同步关闭自己,所以是阻塞状态，如果不实用线程的话，无法将对象暴露出去给外部调用
                 channel.closeFuture().sync();
@@ -94,49 +91,13 @@ public class TCPClient {
         }
     }
 
-
-    public static void main(String[] args) throws InterruptedException, JsonProcessingException {
+    public static void main(String[] args) {
         ExecutorService executorService = Executors.newFixedThreadPool(200);
-        /*for (int i = 0; i < 10; i++) {
-            executorService.execute(() -> {
-                TCPClient client = new TCPClient("localhost", 8089, executorService);
-                client.connect();
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> contentMap = new HashMap<>();
-                contentMap.put("deviceId", "HUAWEI-MATE9");
-                contentMap.put("from", "13185679963");
-                contentMap.put("to", "15564325896");
-                contentMap.put("timestamp", System.currentTimeMillis() + "");
-                contentMap.put("content", "晚上来家吃饭");
-                try {
-                    client.write(objectMapper.writeValueAsString(RequestContent.request(objectMapper.writeValueAsString(contentMap))));
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                client.close();
-            });
-        }*/
-        TCPClient client = new TCPClient("localhost", 8089, executorService);
+        HttpClient client = new HttpClient("localhost", 8088, executorService);
         client.connect();
-        ObjectMapper objectMapper = new ObjectMapper();
-        for (int i = 0; i < 100; i++) {
-            Map<String, Object> requestMap = new HashMap<>();
-            requestMap.put("requestId", UUID.randomUUID().toString());
-            requestMap.put("type", "REQUEST");
-            requestMap.put("cmd", "ECHO");
-            Map<String, String> contentMap = new HashMap<>();
-            contentMap.put("deviceId", "HUAWEI-MATE9");
-            contentMap.put("from", "13185679963");
-            contentMap.put("to", "15564325896");
-            contentMap.put("timestamp", System.currentTimeMillis() + "");
-            contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
-            requestMap.put("body", objectMapper.writeValueAsString(contentMap));
-            client.write(objectMapper.writeValueAsString(requestMap) + "\r\n");
-        }
+        executorService.execute(() -> {
+            client.write("哈哈");
+        });
+
     }
 }

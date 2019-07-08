@@ -64,7 +64,7 @@ public class ChannelInfo {
         this.registryTime = registryTime;
         this.modifyTime = modifyTime;
         this.queue = queue;
-        syncDone = false;
+        this.syncDone = false;
     }
 
     /**
