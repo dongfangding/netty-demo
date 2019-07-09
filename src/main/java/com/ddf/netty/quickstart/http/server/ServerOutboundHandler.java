@@ -2,6 +2,7 @@ package com.ddf.netty.quickstart.http.server;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -10,6 +11,7 @@ import io.netty.channel.ChannelPromise;
  * @author dongfang.ding
  * @date 2019/7/5 15:16
  */
+@ChannelHandler.Sharable
 public class ServerOutboundHandler extends ChannelOutboundHandlerAdapter {
 
     @Override

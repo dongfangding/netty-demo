@@ -1,12 +1,15 @@
 package com.ddf.netty.quickstart.http.client;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.http.*;
+import io.netty.util.CharsetUtil;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -56,7 +59,7 @@ public class HttpClient {
         });
     }
 
-    public void write(String content) {
+    public void post(String content) {
         while (channel == null) {
             try {
                 Thread.sleep(200);
@@ -64,18 +67,12 @@ public class HttpClient {
                 e.printStackTrace();
             }
         }
-        channel.writeAndFlush(content);
-    }
-
-    public void write(byte[] content) {
-        while (channel == null) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        channel.writeAndFlush(content);
+        FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "hehe",
+                Unpooled.copiedBuffer(content.getBytes(CharsetUtil.UTF_8)));
+        HttpUtil.setContentLength(request, request.content().readableBytes());
+        HttpUtil.setKeepAlive(request, true);
+        request.headers().set(HttpHeaderNames.CONTENT_TYPE, "application/json;charset=utf-8");
+        channel.writeAndFlush(request);
     }
 
     public void close() {
@@ -95,9 +92,6 @@ public class HttpClient {
         ExecutorService executorService = Executors.newFixedThreadPool(200);
         HttpClient client = new HttpClient("localhost", 8088, executorService);
         client.connect();
-        executorService.execute(() -> {
-            client.write("哈哈");
-        });
-
+        client.post("{\"id\": 222}");
     }
 }

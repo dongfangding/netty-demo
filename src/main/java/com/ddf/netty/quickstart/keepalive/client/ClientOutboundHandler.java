@@ -1,5 +1,6 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -8,6 +9,7 @@ import io.netty.channel.ChannelPromise;
  * @author dongfang.ding
  * @date 2019/7/5 17:38
  */
+@ChannelHandler.Sharable
 public class ClientOutboundHandler extends ChannelOutboundHandlerAdapter {
 
     @Override

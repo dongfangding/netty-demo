@@ -53,7 +53,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<RequestCon
     protected void channelRead0(ChannelHandlerContext ctx, RequestContent msg) throws JsonProcessingException {
         putMessage(ctx.channel(), msg);
         System.out.println("接收到客户端[" + ctx.channel().remoteAddress() + "]发送的数据: " + RequestContent.serial(msg));
-        ctx.writeAndFlush(RequestContent.response(msg));
+        ctx.writeAndFlush(RequestContent.responseAccept(msg));
     }
 
     @Override

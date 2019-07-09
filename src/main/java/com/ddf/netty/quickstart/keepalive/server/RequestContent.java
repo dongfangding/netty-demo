@@ -64,18 +64,32 @@ public class RequestContent {
     }
 
     /**
-     * 服务端应答客户端
+     * 服务端应答客户端数据已收到
      *
      * @param requestContent
      * @return
      */
-    public static RequestContent response(RequestContent requestContent) {
+    public static RequestContent responseAccept(RequestContent requestContent) {
+        return response(requestContent, "202");
+    }
+
+    /**
+     * 服务端应答客户端处理成功
+     *
+     * @param requestContent
+     * @return
+     */
+    public static RequestContent responseOK(RequestContent requestContent) {
+        return response(requestContent, "200");
+    }
+
+    private static RequestContent response(RequestContent requestContent, String code) {
         RequestContent response = new RequestContent();
         response.setType(Type.RESPONSE.name());
         response.setRequestId(requestContent.getRequestId());
         response.setCmd(requestContent.getCmd());
         response.setResponseTime(System.currentTimeMillis());
-        response.setBody("200");
+        response.setBody(code);
         return response;
     }
 

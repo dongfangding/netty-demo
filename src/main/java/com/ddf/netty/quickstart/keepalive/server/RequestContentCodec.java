@@ -25,6 +25,7 @@ public class RequestContentCodec extends ByteToMessageCodec<Object> {
     protected void encode(ChannelHandlerContext ctx, Object msg, ByteBuf out) throws Exception {
         if (msg instanceof RequestContent) {
             out.writeBytes(new ObjectMapper().writeValueAsBytes(msg));
+            out.writeBytes("\r\n".getBytes());
         }
     }
 
@@ -44,7 +45,7 @@ public class RequestContentCodec extends ByteToMessageCodec<Object> {
         byte[] array = new byte[length];
         in.readBytes(array);
         RequestContent requestContent = objectMapper.readValue(array, RequestContent.class);
-        // 以客户端为准还是服务端自己设置？
+        // FIXME 以客户端为准还是服务端自己设置？
         requestContent.setRequestTime(System.currentTimeMillis());
         out.add(requestContent);
     }

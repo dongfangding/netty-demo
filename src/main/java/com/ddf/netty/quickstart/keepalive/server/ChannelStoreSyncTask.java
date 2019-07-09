@@ -29,7 +29,7 @@ public class ChannelStoreSyncTask implements Runnable {
     }
 
     /**
-     * 这一块如果是与数据库同步的话，下面处理没有这么复杂，就简单很多了
+     * 这一块如果是与数据库同步的话，下面处理没有这么复杂，就简单很多了,连接状态和消息需要分开处理
      */
     @Override
     public void run() {
@@ -54,6 +54,8 @@ public class ChannelStoreSyncTask implements Runnable {
                             ObjectMapper objectMapper = new ObjectMapper();
                             while (queue.peek() != null) {
                                 RequestContent content = queue.poll();
+                                // FIXME 与数据库同步的时候需要数据库写入成功，再返回
+                                v.getChannel().writeAndFlush(RequestContent.responseOK(content));
                                 file.write(objectMapper.writeValueAsBytes(content));
                                 file.write(System.lineSeparator().getBytes());
                             }

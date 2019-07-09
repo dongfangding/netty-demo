@@ -3,6 +3,7 @@ package com.ddf.netty.quickstart.keepalive.client;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
@@ -17,7 +18,8 @@ public class ClientChannelInit extends ChannelInitializer<Channel> {
     protected void initChannel(Channel ch) {
         ChannelPipeline pipeline = ch.pipeline();
         if (pipeline != null) {
-            pipeline.addLast(new StringEncoder(), new StringDecoder(), new ClientInboundHandler())
+            pipeline.addLast(new LineBasedFrameDecoder(1024), new StringEncoder(), new StringDecoder())
+                    .addLast(new ClientInboundHandler())
                     .addLast(new ClientOutboundHandler());
         }
     }
