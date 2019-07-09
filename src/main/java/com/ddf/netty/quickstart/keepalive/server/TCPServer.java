@@ -8,6 +8,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * http协议服务端
@@ -18,19 +19,24 @@ import java.util.concurrent.Executors;
 public class TCPServer {
 
     private int port;
+    private EventLoopGroup boss;
+    private EventLoopGroup worker;
 
     public TCPServer(int port) {
         this.port = port;
     }
 
+
+    /**
+     * 启动服务端
+     */
     public void start() {
-        EventLoopGroup boss = new NioEventLoopGroup();
-        EventLoopGroup worker = new NioEventLoopGroup();
+        boss = new NioEventLoopGroup();
+        worker = new NioEventLoopGroup();
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(boss, worker)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 1024)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childHandler(new ServerChannelInit());
         ChannelFuture future;
@@ -40,17 +46,22 @@ public class TCPServer {
             if (future.isSuccess()) {
                 System.out.println("服务端启动成功....");
             }
-            Executors.newSingleThreadExecutor().execute(new ChannelStoreSyncTask());
+            Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new ChannelStoreSyncTask(), 10, 10, TimeUnit.SECONDS);
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                boss.shutdownGracefully().sync();
-                worker.shutdownGracefully().sync();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        }
+    }
+
+    /**
+     * 关闭服务端
+     */
+    public void close() {
+        try {
+            boss.shutdownGracefully().sync();
+            worker.shutdownGracefully().sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

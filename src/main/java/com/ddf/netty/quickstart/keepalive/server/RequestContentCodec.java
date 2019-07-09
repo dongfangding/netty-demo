@@ -40,13 +40,16 @@ public class RequestContentCodec extends ByteToMessageCodec<Object> {
      */
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-        ObjectMapper objectMapper = new ObjectMapper();
-        int length = in.readableBytes();
-        byte[] array = new byte[length];
-        in.readBytes(array);
-        RequestContent requestContent = objectMapper.readValue(array, RequestContent.class);
-        // FIXME 以客户端为准还是服务端自己设置？
-        requestContent.setRequestTime(System.currentTimeMillis());
-        out.add(requestContent);
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            int length = in.readableBytes();
+            byte[] array = new byte[length];
+            in.readBytes(array);
+            RequestContent requestContent = objectMapper.readValue(array, RequestContent.class);
+            out.add(requestContent);
+            // TODO 对RequestContent参数进行校验
+        } catch (Exception e) {
+            ctx.close();
+        }
     }
 }

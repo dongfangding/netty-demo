@@ -1,6 +1,6 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.ddf.netty.quickstart.keepalive.server.RequestContent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -12,12 +12,10 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- *
  * @author dongfang.ding
  * @date 2019/7/5 11:12
  */
@@ -67,18 +65,7 @@ public class TCPClient {
                 e.printStackTrace();
             }
         }
-        channel.writeAndFlush(content);
-    }
-
-    public void write(byte[] content) {
-        while (channel == null) {
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        channel.writeAndFlush(content);
+        channel.writeAndFlush(content + "\r\n");
     }
 
     public void close() {
@@ -95,48 +82,29 @@ public class TCPClient {
     }
 
 
-    public static void main(String[] args) throws InterruptedException, JsonProcessingException {
-        ExecutorService executorService = Executors.newFixedThreadPool(200);
-        /*for (int i = 0; i < 10; i++) {
-            executorService.execute(() -> {
-                TCPClient client = new TCPClient("localhost", 8089, executorService);
-                client.connect();
-                ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> contentMap = new HashMap<>();
-                contentMap.put("deviceId", "HUAWEI-MATE9");
-                contentMap.put("from", "13185679963");
-                contentMap.put("to", "15564325896");
-                contentMap.put("timestamp", System.currentTimeMillis() + "");
-                contentMap.put("content", "晚上来家吃饭");
-                try {
-                    client.write(objectMapper.writeValueAsString(RequestContent.request(objectMapper.writeValueAsString(contentMap))));
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                client.close();
-            });
-        }*/
-        TCPClient client = new TCPClient("localhost", 8089, executorService);
-        client.connect();
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newCachedThreadPool();
         ObjectMapper objectMapper = new ObjectMapper();
-        for (int i = 0; i < 100; i++) {
-            Map<String, Object> requestMap = new HashMap<>();
-            requestMap.put("requestId", UUID.randomUUID().toString());
-            requestMap.put("type", "REQUEST");
-            requestMap.put("cmd", "ECHO");
-            Map<String, String> contentMap = new HashMap<>();
-            contentMap.put("deviceId", "HUAWEI-MATE9");
-            contentMap.put("from", "13185679963");
-            contentMap.put("to", "15564325896");
-            contentMap.put("timestamp", System.currentTimeMillis() + "");
-            contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
-            requestMap.put("body", objectMapper.writeValueAsString(contentMap));
-            client.write(objectMapper.writeValueAsString(requestMap) + "\r\n");
+        for (int i = 0; i < 10; i++) {
+            TCPClient client = new TCPClient("localhost", 8089, executorService);
+            client.connect();
+            executorService.execute(() -> {
+                for (int j = 0; j < 10; j++) {
+                    try {
+                        // 写json串
+                        Map<String, String> contentMap = new HashMap<>();
+                        contentMap.put("from", "13185679963");
+                        contentMap.put("to", "15564325896");
+                        contentMap.put("timestamp", System.currentTimeMillis() + "");
+                        contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
+                        RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap))
+                                .setExtra("deviceId: HUAWEI-MATE9;请求头: 请求值");
+                        client.write(objectMapper.writeValueAsString(request));
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
     }
 }
