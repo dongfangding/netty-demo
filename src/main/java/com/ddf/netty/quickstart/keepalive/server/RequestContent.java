@@ -17,19 +17,28 @@ import java.util.UUID;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RequestContent implements Serializable {
+    /**
+     * 扩展头每个键值对之间的分隔符，注意空格
+     */
+    public static final String SPLIT_LINE = "; ";
+    /**
+     * 扩展头键值对之间的分隔符，注意空格
+     */
+    public static final String SPLIT_KEY_VALUE = ": ";
 
     /**
-     * 唯一标识次数请求
+     * 唯一标识此数请求，一个随机数
      */
     @JsonInclude
     private String requestId;
     /**
-     * 1 请求 2 应答
+     * REQUEST 请求 RESPONSE 应答
+     * @see Type
      */
     @JsonInclude
     private String type;
     /**
-     * 本次请求要做什么事情
+     * 本次请求要做什么事情,比如心跳包还是业务处理，不同的业务要做的事情不一样，处理主体数据格式也不一样
      */
     @JsonInclude
     private String cmd;
@@ -43,6 +52,7 @@ public class RequestContent implements Serializable {
      * 响应时间
      */
     private Long responseTime;
+
     /**
      * 主体数据
      */
@@ -50,7 +60,7 @@ public class RequestContent implements Serializable {
 
     /**
      * 扩展字段
-     * 类似http请求头，解析格式为key1: value1; key2: value2
+     * 类似http请求头，解析格式为key1: value1; key2: value2，注意是有空格的
      */
     private String extra;
 
@@ -99,9 +109,16 @@ public class RequestContent implements Serializable {
         return response(requestContent, "200");
     }
 
+    /**
+     * 根据请求数据构造响应数据
+     * @param requestContent
+     * @param code
+     * @return
+     */
     private static RequestContent response(RequestContent requestContent, String code) {
         RequestContent response = new RequestContent();
         response.setType(Type.RESPONSE.name());
+        response.setRequestTime(requestContent.getRequestTime());
         response.setRequestId(requestContent.getRequestId());
         response.setCmd(requestContent.getCmd());
         response.setResponseTime(System.currentTimeMillis());
@@ -115,7 +132,24 @@ public class RequestContent implements Serializable {
      * @return
      */
     public static RequestContent heart() {
-        return new RequestContent(UUID.randomUUID().toString(), Type.REQUEST, Cmd.ECHO, System.currentTimeMillis(), "ping");
+        return new RequestContent(UUID.randomUUID().toString(), Type.REQUEST, Cmd.HEART, System.currentTimeMillis(), "ping");
+    }
+
+    /**
+     * 添加扩展字段
+     * @param key
+     * @param value
+     * @return
+     */
+    public RequestContent addExtra(String key, String value) {
+        if (extra == null) {
+            extra = "";
+        } else if (extra.length() > 0) {
+            extra += SPLIT_LINE;
+        }
+        extra += key + SPLIT_KEY_VALUE + value;
+        parseExtra();
+        return this;
     }
 
     /**
@@ -128,6 +162,29 @@ public class RequestContent implements Serializable {
     public static String serial(RequestContent requestContent) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(requestContent);
+    }
+
+    /**
+     * 解析扩展字段,注意空格
+     */
+    private RequestContent parseExtra() {
+        if (null != extra && !"".equals(extra)) {
+            try {
+                String[] keyValueArr = extra.split(SPLIT_LINE);
+                if (keyValueArr.length > 0) {
+                    Map<String, String> extraMap = getExtraMap() == null ? new HashMap<>() : getExtraMap();
+                    String[] keyValue;
+                    for (String s : keyValueArr) {
+                        keyValue = s.split(SPLIT_KEY_VALUE);
+                        extraMap.put(keyValue[0], keyValue[1]);
+                    }
+                    setExtraMap(extraMap);
+                }
+            } catch (Exception e) {
+                extraMap = null;
+            }
+        }
+        return this;
     }
 
     public String getRequestId() {
@@ -188,7 +245,13 @@ public class RequestContent implements Serializable {
         return extra;
     }
 
-    public RequestContent setExtra(String extra) {
+
+    /**
+     * 由于set添加扩展值容易出错，因此不对外提供，进攻解码器使用
+     * @param extra
+     * @return
+     */
+    private RequestContent setExtra(String extra) {
         this.extra = extra;
         return parseExtra();
     }
@@ -202,29 +265,6 @@ public class RequestContent implements Serializable {
     }
 
     /**
-     * 解析扩展字段
-     */
-    private RequestContent parseExtra() {
-        if (null != extra && !"".equals(extra)) {
-            try {
-                String[] keyValueArr = extra.split(";");
-                if (keyValueArr.length > 0) {
-                    Map<String, String> extraMap = getExtraMap() == null ? new HashMap<>() : getExtraMap();
-                    String[] keyValue;
-                    for (String s : keyValueArr) {
-                        keyValue = s.split(":");
-                        extraMap.put(keyValue[0], keyValue[1]);
-                    }
-                    setExtraMap(extraMap);
-                }
-            } catch (Exception e) {
-                // 解析出错忽略本次扩展字段
-            }
-        }
-        return this;
-    }
-
-    /**
      * 连接请求类型
      */
     public enum Type {
@@ -233,7 +273,7 @@ public class RequestContent implements Serializable {
          */
         REQUEST,
         /**
-         * 应答
+         * 响应
          */
         RESPONSE
     }

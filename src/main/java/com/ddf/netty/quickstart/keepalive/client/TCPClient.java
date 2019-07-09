@@ -97,8 +97,10 @@ public class TCPClient {
                         contentMap.put("to", "15564325896");
                         contentMap.put("timestamp", System.currentTimeMillis() + "");
                         contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
-                        RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap))
-                                .setExtra("deviceId: HUAWEI-MATE9;请求头: 请求值");
+                        RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
+                        // 以append的方式增加扩展字段
+                        request.addExtra("lang", "java");
+                        request.addExtra("devieId", "huawei");
                         client.write(objectMapper.writeValueAsString(request));
                     } catch (Exception e) {
                         e.printStackTrace();

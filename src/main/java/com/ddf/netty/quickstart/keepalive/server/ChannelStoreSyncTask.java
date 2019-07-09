@@ -51,16 +51,6 @@ public class ChannelStoreSyncTask implements Runnable {
                             ObjectMapper objectMapper = new ObjectMapper();
                             while (queue.peek() != null) {
                                 RequestContent content = queue.poll();
-
-                                System.out.println("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
-
-                                System.out.println(content.getExtraMap());
-
-                                System.out.println("||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||");
-
-
-
-
                                 // FIXME 与数据库同步的时候需要数据库写入成功，再返回
                                 v.getChannel().writeAndFlush(RequestContent.responseOK(content));
                                 file.write(objectMapper.writeValueAsBytes(content));
@@ -95,6 +85,7 @@ public class ChannelStoreSyncTask implements Runnable {
                         bw.flush();
                         bw.close();
                     } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 });
             }
