@@ -1,6 +1,7 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
 import com.ddf.netty.quickstart.keepalive.server.RequestContent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
@@ -58,6 +59,7 @@ public class TCPClient {
     }
 
     public void write(String content) {
+        System.out.println("========================================================================================");
         while (channel == null) {
             try {
                 Thread.sleep(200);
@@ -65,7 +67,7 @@ public class TCPClient {
                 e.printStackTrace();
             }
         }
-        channel.writeAndFlush(content + "\r\n");
+        channel.writeAndFlush((content));
     }
 
     public void close() {
@@ -82,11 +84,32 @@ public class TCPClient {
     }
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws JsonProcessingException {
         ExecutorService executorService = Executors.newCachedThreadPool();
         ObjectMapper objectMapper = new ObjectMapper();
-        for (int i = 0; i < 10; i++) {
-            TCPClient client = new TCPClient("localhost", 8089, executorService);
+
+        TCPClient client = new TCPClient("localhost", 8089, executorService);
+        client.connect();
+
+        Map<String, String> contentMap = new HashMap<>();
+        contentMap.put("from", "13185679963");
+        contentMap.put("to", "15564325896");
+        contentMap.put("timestamp", System.currentTimeMillis() + "");
+        contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
+        RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
+        // 以append的方式增加扩展字段
+        request.addExtra("lang", "java");
+        request.addExtra("devieId", "huawei");
+        // 写json串
+        client.write(objectMapper.writeValueAsString(request));
+
+        request.setBody("我是一个粉刷匠!");
+        // 写字符串
+        client.write(objectMapper.writeValueAsString(request));
+
+
+        /*for (int i = 0; i < 10; i++) {
+            TCPClient client = new TCPClient("localhost", 9000, executorService);
             client.connect();
             executorService.execute(() -> {
                 for (int j = 0; j < 10; j++) {
@@ -107,6 +130,8 @@ public class TCPClient {
                     }
                 }
             });
-        }
+            System.out.println("??????????");
+            client.write("\r\n");
+        }*/
     }
 }

@@ -21,9 +21,16 @@ public class TCPServer {
     private int port;
     private EventLoopGroup boss;
     private EventLoopGroup worker;
+    private boolean sync;
 
     public TCPServer(int port) {
         this.port = port;
+        this.sync = true;
+    }
+
+    public TCPServer(int port, boolean sync) {
+        this.port = port;
+        this.sync = sync;
     }
 
 
@@ -46,7 +53,9 @@ public class TCPServer {
             if (future.isSuccess()) {
                 System.out.println("服务端启动成功....");
             }
-            Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new ChannelStoreSyncTask(), 10, 10, TimeUnit.SECONDS);
+            if (sync) {
+                Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new ChannelStoreSyncTask(), 10, 10, TimeUnit.SECONDS);
+            }
             future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();

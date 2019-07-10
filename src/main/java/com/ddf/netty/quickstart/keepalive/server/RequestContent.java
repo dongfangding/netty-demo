@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
+ *
+ * 通道传输数据格式定义类
+ *
  * @author dongfang.ding
  * @date 2019/7/5 14:59
  */
@@ -27,7 +30,7 @@ public class RequestContent implements Serializable {
     public static final String SPLIT_KEY_VALUE = ": ";
 
     /**
-     * 唯一标识此数请求，一个随机数
+     * 唯一标识此次请求，一个随机数
      */
     @JsonInclude
     private String requestId;
@@ -80,7 +83,7 @@ public class RequestContent implements Serializable {
     }
 
     /**
-     * 服务端主动向客户端发送数据构造类对象
+     * 主动发起请求推送数据
      *
      * @param content
      * @return
@@ -90,7 +93,7 @@ public class RequestContent implements Serializable {
     }
 
     /**
-     * 服务端应答客户端数据已收到
+     * 对收到的请求应答数据已收到
      *
      * @param requestContent
      * @return
@@ -100,30 +103,13 @@ public class RequestContent implements Serializable {
     }
 
     /**
-     * 服务端应答客户端处理成功
+     * 对收到的请求应答业务处理成功
      *
      * @param requestContent
      * @return
      */
     public static RequestContent responseOK(RequestContent requestContent) {
         return response(requestContent, "200");
-    }
-
-    /**
-     * 根据请求数据构造响应数据
-     * @param requestContent
-     * @param code
-     * @return
-     */
-    private static RequestContent response(RequestContent requestContent, String code) {
-        RequestContent response = new RequestContent();
-        response.setType(Type.RESPONSE.name());
-        response.setRequestTime(requestContent.getRequestTime());
-        response.setRequestId(requestContent.getRequestId());
-        response.setCmd(requestContent.getCmd());
-        response.setResponseTime(System.currentTimeMillis());
-        response.setBody(code);
-        return response;
     }
 
     /**
@@ -162,6 +148,24 @@ public class RequestContent implements Serializable {
     public static String serial(RequestContent requestContent) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.writeValueAsString(requestContent);
+    }
+
+
+    /**
+     * 根据请求数据构造响应数据
+     * @param requestContent
+     * @param code
+     * @return
+     */
+    private static RequestContent response(RequestContent requestContent, String code) {
+        RequestContent response = new RequestContent();
+        response.setType(Type.RESPONSE.name());
+        response.setRequestTime(requestContent.getRequestTime());
+        response.setRequestId(requestContent.getRequestId());
+        response.setCmd(requestContent.getCmd());
+        response.setResponseTime(System.currentTimeMillis());
+        response.setBody(code);
+        return response;
     }
 
     /**
