@@ -40,6 +40,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<RequestCon
     public void channelInactive(ChannelHandlerContext ctx) {
         System.out.println("客户端[" + ctx.channel().remoteAddress() + "]掉线");
         ChannelInfo.inactive(ctx.channel());
+        channels.remove(ctx.channel());
     }
 
 
@@ -59,6 +60,7 @@ public class ServerInboundHandler extends SimpleChannelInboundHandler<RequestCon
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         cause.printStackTrace();
+        System.out.println("客户端[" + ctx.channel() + "]出现异常，关闭连接");
         ctx.close();
     }
 

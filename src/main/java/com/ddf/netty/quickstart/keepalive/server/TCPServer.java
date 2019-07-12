@@ -1,6 +1,7 @@
 package com.ddf.netty.quickstart.keepalive.server;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -18,18 +19,23 @@ import java.util.concurrent.TimeUnit;
  */
 public class TCPServer {
 
+    private static int WORKER_GROUP_SIZE = Runtime.getRuntime().availableProcessors() * 2;
+
     private int port;
     private EventLoopGroup boss;
     private EventLoopGroup worker;
     private boolean sync;
+    private boolean startSsl;
 
     public TCPServer(int port) {
         this.port = port;
         this.sync = true;
+        this.startSsl = false;
     }
 
-    public TCPServer(int port, boolean sync) {
+    public TCPServer(int port, boolean startSsl, boolean sync) {
         this.port = port;
+        this.startSsl = startSsl;
         this.sync = sync;
     }
 
@@ -37,15 +43,28 @@ public class TCPServer {
     /**
      * 启动服务端
      */
-    public void start() {
+    public void start() throws Exception {
         boss = new NioEventLoopGroup();
-        worker = new NioEventLoopGroup();
+        worker = new NioEventLoopGroup(WORKER_GROUP_SIZE);
         ServerBootstrap serverBootstrap = new ServerBootstrap();
-        serverBootstrap.group(boss, worker)
-                .channel(NioServerSocketChannel.class)
-                .option(ChannelOption.SO_BACKLOG, 1024)
+        serverBootstrap.group(boss, worker);
+        serverBootstrap.channel(NioServerSocketChannel.class);
+        System.out.println("workerGroup size:" + WORKER_GROUP_SIZE);
+        serverBootstrap.childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(new ServerChannelInit());
+                .childOption(ChannelOption.SO_REUSEADDR, true)
+                .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
+                .childOption(ChannelOption.SO_RCVBUF, 1048576)
+                .childOption(ChannelOption.SO_SNDBUF, 1048576);
+        try {
+            if (startSsl) {
+                serverBootstrap.childHandler(new ServerChannelInit(KeyManagerFactoryHelper.defaultServerContext()));
+            } else {
+                serverBootstrap.childHandler(new ServerChannelInit());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         ChannelFuture future;
         try {
             System.out.println("服务端启动中.....");
@@ -75,6 +94,10 @@ public class TCPServer {
     }
 
     public static void main(String[] args) {
-        new TCPServer(8089).start();
+        try {
+            new TCPServer(8089, true, true).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

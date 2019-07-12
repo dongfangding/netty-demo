@@ -1,5 +1,6 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
+import com.ddf.netty.quickstart.keepalive.server.KeyManagerFactoryHelper;
 import com.ddf.netty.quickstart.keepalive.server.RequestContent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,12 +27,14 @@ public class TCPClient {
     private int port;
     private volatile Channel channel;
     private ExecutorService executorService;
-    private volatile NioEventLoopGroup worker;
+    private NioEventLoopGroup worker;
+    private boolean startSsl;
 
-    public TCPClient(String host, int port, ExecutorService executorService) {
+    public TCPClient(String host, int port, ExecutorService executorService, boolean startSsl) {
         this.host = host;
         this.port = port;
         this.executorService = executorService;
+        this.startSsl = startSsl;
     }
 
     public void connect() {
@@ -40,8 +43,20 @@ public class TCPClient {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(worker).channel(NioSocketChannel.class)
                     .option(ChannelOption.SO_KEEPALIVE, true)
-                    .remoteAddress(host, port)
-                    .handler(new ClientChannelInit());
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .option(ChannelOption.SO_REUSEADDR, true)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+            bootstrap.remoteAddress(host, port);
+            try {
+                if (startSsl) {
+                    bootstrap.handler(new ClientChannelInit(KeyManagerFactoryHelper.defaultClientContext()));
+                } else {
+                    bootstrap.handler(new ClientChannelInit());
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
             ChannelFuture future;
             try {
                 future = bootstrap.connect().sync();
@@ -59,7 +74,6 @@ public class TCPClient {
     }
 
     public void write(String content) {
-        System.out.println("========================================================================================");
         while (channel == null) {
             try {
                 Thread.sleep(200);
@@ -88,7 +102,7 @@ public class TCPClient {
         ExecutorService executorService = Executors.newCachedThreadPool();
         ObjectMapper objectMapper = new ObjectMapper();
 
-        TCPClient client = new TCPClient("localhost", 8089, executorService);
+        TCPClient client = new TCPClient("localhost", 8089, executorService, true);
         client.connect();
 
         Map<String, String> contentMap = new HashMap<>();
@@ -107,31 +121,5 @@ public class TCPClient {
         // 写字符串
         client.write(objectMapper.writeValueAsString(request));
 
-
-        /*for (int i = 0; i < 10; i++) {
-            TCPClient client = new TCPClient("localhost", 9000, executorService);
-            client.connect();
-            executorService.execute(() -> {
-                for (int j = 0; j < 10; j++) {
-                    try {
-                        // 写json串
-                        Map<String, String> contentMap = new HashMap<>();
-                        contentMap.put("from", "13185679963");
-                        contentMap.put("to", "15564325896");
-                        contentMap.put("timestamp", System.currentTimeMillis() + "");
-                        contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
-                        RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
-                        // 以append的方式增加扩展字段
-                        request.addExtra("lang", "java");
-                        request.addExtra("devieId", "huawei");
-                        client.write(objectMapper.writeValueAsString(request));
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-            System.out.println("??????????");
-            client.write("\r\n");
-        }*/
     }
 }
