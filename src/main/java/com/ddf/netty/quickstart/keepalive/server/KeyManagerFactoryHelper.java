@@ -13,17 +13,21 @@ import java.security.NoSuchAlgorithmException;
 /**
  * 生成服务器SslContext
  *
- * 1. 生成服务端证书,证书密码是123456
- * keytool -genkey -alias securechat -keysize 2048 -validity 365 -keyalg RSA -dname "CN=localhost" -keypass server_123456 -storepass server_123456 -keystore server.jks
+ * 1. 生成服务端密钥对,证书密码是123456
+ * keytool -genkey -alias server_jks -keysize 2048 -validity 365 -keyalg RSA -dname "CN=localhost" -keypass server_123456 -storepass server_123456 -keystore server.jks
  *
  * 2. 将生成的文件导入到证书中存储
- *  keytool -export -alias securechat -keystore server.jks -storepass server_123456 -file server.cer
+ *  keytool -export -alias server_jks -keystore server.jks -storepass server_123456 -file server.cer
  *
- * 3. 生成客户端
- * keytool -genkey -alias smcc -keysize 2048 -validity 365 -keyalg RSA -dname "CN=localhost" -keypass client_123456 -storepass client_123456 -keystore client.jks
+ * 3. 客户端生成密钥对文件
+ * keytool -genkey -alias client_jks -keysize 2048 -validity 365 -keyalg RSA -dname "CN=localhost" -keypass client_123456 -storepass client_123456 -keystore client.jks
  *
- * 4. 将客户端证书导入到服务端的秘钥库中，并且授信
- * keytool -import -trustcacerts -alias securechat -file server.cer -storepass client_123456 -keystore client.jks
+ * 4. 将服务端的公钥导入到客户端的授信库中，这一步应该是客户端来做，服务端将证书发送给客户端
+ * keytool -import -trustcacerts -alias server_jks -file server.cer -storepass client_123456 -keystore client.jks
+ *
+ * 补充:
+ *     1. 从jks中获取公钥 keytool -list -rfc -keystore client.jks -storepass client_123456
+ *     2. 私钥不能直接获取
  *
  *
  * @author dongfang.ding
@@ -41,7 +45,9 @@ public class KeyManagerFactoryHelper {
 
     static {
         try {
+            // 密钥仓库类型
             keyStore = KeyStore.getInstance("JKS");
+            // X.509 标准规定了证书可以包含什么信息，并说明了记录信息的方法（数据格式）。除了签名外，所有 X.509证书还包含以
             keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
             trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
         } catch (KeyStoreException | NoSuchAlgorithmException e) {
@@ -64,7 +70,7 @@ public class KeyManagerFactoryHelper {
      * @throws Exception
      */
     public static SslContext defaultClientContext() throws Exception {
-        return KeyManagerFactoryHelper.createServerContext(DEFAULT_CLIENT_PATH, DEFAULT_CLIENT_PASS);
+        return KeyManagerFactoryHelper.createClientContext(DEFAULT_CLIENT_PATH, DEFAULT_CLIENT_PASS);
     }
 
     /**

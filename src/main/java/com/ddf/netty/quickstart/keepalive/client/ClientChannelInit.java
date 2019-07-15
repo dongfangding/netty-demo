@@ -1,14 +1,12 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
+import com.ddf.netty.quickstart.keepalive.server.RequestContentCodec;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LineBasedFrameDecoder;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.util.CharsetUtil;
 
 import javax.net.ssl.SSLEngine;
 
@@ -40,9 +38,10 @@ public class ClientChannelInit extends ChannelInitializer<Channel> {
             }
 
             pipeline.addLast(new LineBasedFrameDecoder(1024))
-                    // 指定字符串编解码器，客户端直接写入字符串，不需要使用ByteBuf
-                    .addLast(new StringEncoder(CharsetUtil.UTF_8))
-                    .addLast(new StringDecoder(CharsetUtil.UTF_8))
+                    // 指定字符串编解码器，客户端直接写入字符串，不需要使用ByteBuf,这种写法是如果客户端没有服务端源码，或不想写编码器
+                    /*.addLast(new StringEncoder(CharsetUtil.UTF_8))
+                    .addLast(new StringDecoder(CharsetUtil.UTF_8))*/
+                    .addLast(new RequestContentCodec())
                     .addLast(new ClientInboundHandler())
                     .addLast(new ClientOutboundHandler());
         }

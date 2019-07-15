@@ -1,5 +1,7 @@
 package com.ddf.netty.quickstart.keepalive.client;
 
+import com.ddf.netty.quickstart.keepalive.server.RequestContent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
@@ -12,8 +14,12 @@ public class ClientOutboundHandler extends ChannelOutboundHandlerAdapter {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
-        System.out.println("向服务端发送数据: " + msg);
-        ctx.writeAndFlush((msg.toString() + "\r\n"));
+        try {
+            System.out.println("向服务端发送数据: " + RequestContent.serial((RequestContent) msg));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        ctx.writeAndFlush((msg));
     }
 
     @Override

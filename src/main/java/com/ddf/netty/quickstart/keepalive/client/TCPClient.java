@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -73,7 +72,7 @@ public class TCPClient {
         });
     }
 
-    public void write(String content) {
+    public void write(RequestContent content) {
         while (channel == null) {
             try {
                 Thread.sleep(200);
@@ -87,7 +86,7 @@ public class TCPClient {
     public void close() {
         try {
             System.out.println("客户端尝试主动close..............");
-            channel.closeFuture().addListener(ChannelFutureListener.CLOSE);
+            channel.close();
         } finally {
             try {
                 worker.shutdownGracefully().sync();
@@ -98,28 +97,26 @@ public class TCPClient {
     }
 
 
-    public static void main(String[] args) throws JsonProcessingException {
+    public static void main(String[] args) throws JsonProcessingException, InterruptedException {
         ExecutorService executorService = Executors.newCachedThreadPool();
         ObjectMapper objectMapper = new ObjectMapper();
 
         TCPClient client = new TCPClient("localhost", 8089, executorService, true);
         client.connect();
 
-        Map<String, String> contentMap = new HashMap<>();
-        contentMap.put("from", "13185679963");
-        contentMap.put("to", "15564325896");
-        contentMap.put("timestamp", System.currentTimeMillis() + "");
-        contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
-        RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
-        // 以append的方式增加扩展字段
-        request.addExtra("lang", "java");
-        request.addExtra("devieId", "huawei");
-        // 写json串
-        client.write(objectMapper.writeValueAsString(request));
-
-        request.setBody("我是一个粉刷匠!");
-        // 写字符串
-        client.write(objectMapper.writeValueAsString(request));
-
+        while (true) {
+            Thread.sleep(2000);
+            Map<String, String> contentMap = new HashMap<>();
+            contentMap.put("from", "13185679963");
+            contentMap.put("to", "15564325896");
+            contentMap.put("timestamp", System.currentTimeMillis() + "");
+            contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
+            RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
+            // 以append的方式增加扩展字段
+            request.addExtra("lang", "java");
+            request.addExtra("devieId", "huawei");
+            // 写json串
+            client.write(request);
+        }
     }
 }

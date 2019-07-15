@@ -23,11 +23,11 @@ public class RequestContent implements Serializable {
     /**
      * 扩展头每个键值对之间的分隔符，注意空格
      */
-    public static final String SPLIT_LINE = "; ";
+    private static final String SPLIT_LINE = "; ";
     /**
      * 扩展头键值对之间的分隔符，注意空格
      */
-    public static final String SPLIT_KEY_VALUE = ": ";
+    private static final String SPLIT_KEY_VALUE = ": ";
 
     /**
      * 唯一标识此次请求，一个随机数
