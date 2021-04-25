@@ -7,7 +7,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-
 import javax.net.ssl.SSLEngine;
 
 /**
@@ -17,9 +16,15 @@ import javax.net.ssl.SSLEngine;
  */
 public class ClientChannelInit extends ChannelInitializer<Channel> {
 
+    private TCPClient tcpClient;
+
+    /**
+     * ssl传输
+     */
     private final SslContext context;
 
-    public ClientChannelInit(SslContext context) {
+    public ClientChannelInit(TCPClient tcpClient, SslContext context) {
+        this.tcpClient = tcpClient;
         this.context = context;
     }
 
@@ -42,7 +47,7 @@ public class ClientChannelInit extends ChannelInitializer<Channel> {
                     /*.addLast(new StringEncoder(CharsetUtil.UTF_8))
                     .addLast(new StringDecoder(CharsetUtil.UTF_8))*/
                     .addLast(new RequestContentCodec())
-                    .addLast(new ClientInboundHandler())
+                    .addLast(new ClientInboundHandler(tcpClient))
                     .addLast(new ClientOutboundHandler());
         }
     }

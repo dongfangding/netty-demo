@@ -16,8 +16,8 @@ public class ServerOutboundHandler extends ChannelOutboundHandlerAdapter {
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws JsonProcessingException {
-        System.out.println("向客户端[" + ctx.channel().remoteAddress() + "]发送数据: " + RequestContent.serial((RequestContent) msg));
-        ctx.writeAndFlush(msg);
+//        System.out.println("向客户端[" + ctx.channel().remoteAddress() + "]发送数据: " + RequestContent.serial((RequestContent) msg));
+//        ctx.writeAndFlush(msg);
     }
 
     @Override

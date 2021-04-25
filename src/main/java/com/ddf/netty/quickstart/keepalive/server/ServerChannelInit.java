@@ -1,14 +1,14 @@
 package com.ddf.netty.quickstart.keepalive.server;
 
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-
-import javax.net.ssl.SSLEngine;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLEngine;
 
 /**
  *
@@ -44,8 +44,8 @@ public class ServerChannelInit extends ChannelInitializer<Channel> {
             pipeline.addLast(new LineBasedFrameDecoder(1024)).addLast(new RequestContentCodec())
                     .addLast(new ServerOutboundHandler()).addLast(new ServerInboundHandler())
                     // IdleStateHandler 将通过 IdleStateEvent 调用 userEventTriggered ，如果连接没有接收或发送数据超过90秒钟
-                    .addLast(new IdleStateHandler(0, 0, 5, TimeUnit.SECONDS))
-                    .addLast(new HeartbeatHandler());
+                    .addLast(new IdleStateHandler(0, 0, 5, TimeUnit.SECONDS));
+//                    .addLast(new HeartbeatHandler());
         }
     }
 
@@ -53,24 +53,24 @@ public class ServerChannelInit extends ChannelInitializer<Channel> {
     /**
      * 心跳检测类
      */
-    public static final class HeartbeatHandler extends ChannelInboundHandlerAdapter {
-
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-            if (evt instanceof IdleStateEvent) {
-                if (ctx.channel().isActive()) {
-                    // 发送的心跳并添加一个侦听器，如果发送操作失败将关闭连接
-                    try {
-                        ctx.writeAndFlush(RequestContent.heart())
-                                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
-                    } catch (Exception e) {
-                        System.out.println("向客户端发送心跳包失败===================================");
-                    }
-                }
-            } else {
-                // 事件不是一个 IdleStateEvent 的话，就将它传递给下一个处理程序
-                super.userEventTriggered(ctx, evt);
-            }
-        }
-    }
+//    public static final class HeartbeatHandler extends ChannelInboundHandlerAdapter {
+//
+//        @Override
+//        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+//            if (evt instanceof IdleStateEvent) {
+//                if (ctx.channel().isActive()) {
+//                    // 发送的心跳并添加一个侦听器，如果发送操作失败将关闭连接
+//                    try {
+//                        ctx.writeAndFlush(RequestContent.heart())
+//                                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+//                    } catch (Exception e) {
+//                        System.out.println("向客户端发送心跳包失败===================================");
+//                    }
+//                }
+//            } else {
+//                // 事件不是一个 IdleStateEvent 的话，就将它传递给下一个处理程序
+//                super.userEventTriggered(ctx, evt);
+//            }
+//        }
+//    }
 }
