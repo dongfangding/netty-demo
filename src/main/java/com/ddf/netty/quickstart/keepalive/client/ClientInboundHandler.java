@@ -23,12 +23,15 @@ public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final TCPClient tcpClient;
 
+    private final int retries = 1;
+
     public ClientInboundHandler(TCPClient tcpClient) {
         this.tcpClient = tcpClient;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        initRetries();
         super.channelActive(ctx);
         log.info("连接到服务器成功>>>>>>>>>>>>>>>>>.");
         ping(ctx.channel());
@@ -37,7 +40,7 @@ public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
         log.info("与服务器连接断开>>>>>>>>>>>>>>>");
-        reconnect(ctx, 10);
+        reconnect(ctx, 1);
     }
 
     @Override
@@ -98,5 +101,9 @@ public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
             eventLoop.schedule(tcpClient::connect, sleepTimeMs, TimeUnit.MILLISECONDS);
         }
         ctx.fireChannelInactive();
+    }
+
+    public void initRetries() {
+        this.retries = 1;
     }
 }
