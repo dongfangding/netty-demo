@@ -7,7 +7,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -19,13 +19,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class TCPServer {
 
-    private static int WORKER_GROUP_SIZE = Runtime.getRuntime().availableProcessors() * 2;
+    private static final int WORKER_GROUP_SIZE = Runtime.getRuntime().availableProcessors() * 2;
 
-    private int port;
+    private final int port;
     private EventLoopGroup boss;
     private EventLoopGroup worker;
-    private boolean sync;
-    private boolean startSsl;
+    private final boolean sync;
+    private final boolean startSsl;
 
     public TCPServer(int port) {
         this.port = port;
@@ -43,8 +43,8 @@ public class TCPServer {
     /**
      * 启动服务端
      */
-    public void start() throws Exception {
-        boss = new NioEventLoopGroup();
+    public void start() {
+        boss = new NioEventLoopGroup(1);
         worker = new NioEventLoopGroup(WORKER_GROUP_SIZE);
         ServerBootstrap serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(boss, worker);
@@ -56,18 +56,14 @@ public class TCPServer {
                 .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
                 .childOption(ChannelOption.SO_RCVBUF, 1048576)
                 .childOption(ChannelOption.SO_SNDBUF, 1048576);
-        try {
-            if (startSsl) {
-                serverBootstrap.childHandler(new ServerChannelInit(KeyManagerFactoryHelper.defaultServerContext()));
-            } else {
-                serverBootstrap.childHandler(new ServerChannelInit());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (startSsl) {
+            serverBootstrap.childHandler(new ServerChannelInit(KeyManagerFactoryHelper.defaultServerContext()));
+        } else {
+            serverBootstrap.childHandler(new ServerChannelInit());
         }
         ChannelFuture future;
+        System.out.println("服务端启动中.....");
         try {
-            System.out.println("服务端启动中.....");
             future = serverBootstrap.bind(port).sync();
             if (future.isSuccess()) {
                 System.out.println("服务端启动成功....");
@@ -76,8 +72,8 @@ public class TCPServer {
                 Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(new ChannelStoreSyncTask(), 10, 10, TimeUnit.SECONDS);
             }
             future.channel().closeFuture().sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+           throw new ServerStartException("无法启动服务端", e);
         }
     }
 
@@ -86,8 +82,12 @@ public class TCPServer {
      */
     public void close() {
         try {
-            boss.shutdownGracefully().sync();
-            worker.shutdownGracefully().sync();
+            if (Objects.nonNull(boss)) {
+                boss.shutdownGracefully().sync();
+            }
+            if (Objects.nonNull(worker)) {
+                worker.shutdownGracefully().sync();
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -95,7 +95,7 @@ public class TCPServer {
 
     public static void main(String[] args) {
         try {
-            new TCPServer(8089, true, true).start();
+            new TCPServer(8089, true, false).start();
         } catch (Exception e) {
             e.printStackTrace();
         }

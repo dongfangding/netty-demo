@@ -11,8 +11,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author dongfang.ding
@@ -23,16 +21,17 @@ public class TCPClient {
     private String host;
     private int port;
     private volatile Channel channel;
-    private ExecutorService executorService;
     private NioEventLoopGroup worker;
     private boolean startSsl;
-    /** 重连策略 */
-    private RetryPolicy retryPolicy;;
+    /**
+     * 重连策略
+     */
+    private RetryPolicy retryPolicy;
+    ;
 
-    public TCPClient(String host, int port, ExecutorService executorService, boolean startSsl, RetryPolicy retryPolicy) {
+    public TCPClient(String host, int port, boolean startSsl, RetryPolicy retryPolicy) {
         this.host = host;
         this.port = port;
-        this.executorService = executorService;
         this.startSsl = startSsl;
         this.retryPolicy = retryPolicy;
     }
@@ -42,52 +41,31 @@ public class TCPClient {
     }
 
     public void connect() {
-//        executorService.execute(() -> {
-            worker = new NioEventLoopGroup();
-            Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(worker).channel(NioSocketChannel.class)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.SO_REUSEADDR, true)
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
-            try {
-                if (startSsl) {
-                    bootstrap.handler(new ClientChannelInit(this, KeyManagerFactoryHelper.defaultClientContext()));
-                } else {
-                    bootstrap.handler(new ClientChannelInit());
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        worker = new NioEventLoopGroup();
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(worker)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .option(ChannelOption.SO_REUSEADDR, true)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+        if (startSsl) {
+            bootstrap.handler(new ClientChannelInit(this, KeyManagerFactoryHelper.defaultClientContext()));
+        } else {
+            bootstrap.handler(new ClientChannelInit());
+        }
+
+        ChannelFuture future = bootstrap.connect(host, port);
+        future.addListener((ChannelFutureListener) listen -> {
+            if (!listen.isSuccess()) {
+                listen.channel().pipeline().fireChannelInactive();
             }
-
-            bootstrap.connect(host, port);
-
-//            ChannelFuture future;
-//            try {
-//                future = bootstrap.connect().sync();
-//                if (future.isSuccess()) {
-//                    System.out.println("连接到服务端端成功....");
-//                }
-//                channel = future.channel();
-//                System.out.println("客户端初始化完成............");
-//                // 这里会一直与服务端保持连接，直到服务端断掉才会同步关闭自己,所以是阻塞状态，如果不实用线程的话，无法将对象暴露出去给外部调用
-//                channel.closeFuture().sync();
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-
-            ChannelFuture future = bootstrap.connect(host, port);
-            future.addListener(getConnectionListener());
-            this.channel = future.channel();
-//        });
-    }
-
-    private ChannelFutureListener getConnectionListener() {
-        return future -> {
-            if (!future.isSuccess()) {
-                future.channel().pipeline().fireChannelInactive();
-            }
-        };
+        });
+        try {
+            this.channel = future.sync().channel();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public void write(RequestContent content) {
@@ -107,7 +85,8 @@ public class TCPClient {
             channel.close();
         } finally {
             try {
-                worker.shutdownGracefully().sync();
+                worker.shutdownGracefully()
+                        .sync();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -116,30 +95,27 @@ public class TCPClient {
 
 
     public static void main(String[] args) throws JsonProcessingException, InterruptedException {
-        ExecutorService executorService = Executors.newCachedThreadPool();
         ObjectMapper objectMapper = new ObjectMapper();
 
         final ExponentialBackOffRetry backOffRetry = new ExponentialBackOffRetry(1000, Integer.MAX_VALUE, 60 * 1000);
 
-        TCPClient client = new TCPClient("localhost", 8089, executorService, true, backOffRetry);
-        client.connect();
-//
-        Thread.sleep(5000);
-        client.close();
 
-//        while (true) {
-//            Thread.sleep(2000);
-//            Map<String, String> contentMap = new HashMap<>();
-//            contentMap.put("from", "13185679963");
-//            contentMap.put("to", "15564325896");
-//            contentMap.put("timestamp", System.currentTimeMillis() + "");
-//            contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
-//            RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
-//            // 以append的方式增加扩展字段
-//            request.addExtra("lang", "java");
-//            request.addExtra("devieId", "huawei");
-//            // 写json串
-//            client.write(request);
-//        }
+        TCPClient client = new TCPClient("localhost", 8089, true, backOffRetry);
+        client.connect();
+        client.write(RequestContent.heart());
+        //        while (true) {
+        //            Thread.sleep(2000);
+        //            Map<String, String> contentMap = new HashMap<>();
+        //            contentMap.put("from", "13185679963");
+        //            contentMap.put("to", "15564325896");
+        //            contentMap.put("timestamp", System.currentTimeMillis() + "");
+        //            contentMap.put("content", "晚上来家吃饭晚上来家吃饭晚上来家吃饭晚");
+        //            RequestContent request = RequestContent.request(objectMapper.writeValueAsString(contentMap));
+        //            // 以append的方式增加扩展字段
+        //            request.addExtra("lang", "java");
+        //            request.addExtra("devieId", "huawei");
+        //            // 写json串
+        //            client.write(request);
+        //        }
     }
 }
