@@ -46,24 +46,25 @@ public class TCPServer {
     public void start() {
         boss = new NioEventLoopGroup(1);
         worker = new NioEventLoopGroup(WORKER_GROUP_SIZE);
-        ServerBootstrap serverBootstrap = new ServerBootstrap();
-        serverBootstrap.group(boss, worker);
-        serverBootstrap.channel(NioServerSocketChannel.class);
-        System.out.println("workerGroup size:" + WORKER_GROUP_SIZE);
-        serverBootstrap.childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childOption(ChannelOption.SO_REUSEADDR, true)
-                .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
-                .childOption(ChannelOption.SO_RCVBUF, 1048576)
-                .childOption(ChannelOption.SO_SNDBUF, 1048576);
-        if (startSsl) {
-            serverBootstrap.childHandler(new ServerChannelInit(KeyManagerFactoryHelper.defaultServerContext()));
-        } else {
-            serverBootstrap.childHandler(new ServerChannelInit());
-        }
-        ChannelFuture future;
-        System.out.println("服务端启动中.....");
         try {
+            ServerBootstrap serverBootstrap = new ServerBootstrap();
+            serverBootstrap.group(boss, worker);
+            serverBootstrap.channel(NioServerSocketChannel.class);
+            serverBootstrap.option(ChannelOption.SO_BACKLOG, 1024);
+            System.out.println("workerGroup size:" + WORKER_GROUP_SIZE);
+            serverBootstrap.childOption(ChannelOption.TCP_NODELAY, true)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childOption(ChannelOption.SO_REUSEADDR, true)
+                    .childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(false))
+                    .childOption(ChannelOption.SO_RCVBUF, 1048576)
+                    .childOption(ChannelOption.SO_SNDBUF, 1048576);
+            if (startSsl) {
+                serverBootstrap.childHandler(new ServerChannelInit(KeyManagerFactoryHelper.defaultServerContext()));
+            } else {
+                serverBootstrap.childHandler(new ServerChannelInit());
+            }
+            ChannelFuture future;
+            System.out.println("服务端启动中.....");
             future = serverBootstrap.bind(port).sync();
             if (future.isSuccess()) {
                 System.out.println("服务端启动成功....");
@@ -73,7 +74,9 @@ public class TCPServer {
             }
             future.channel().closeFuture().sync();
         } catch (Exception e) {
-           throw new ServerStartException("无法启动服务端", e);
+            boss.shutdownGracefully();
+            worker.shutdownGracefully();
+            throw new ServerStartException("无法启动服务端", e);
         }
     }
 

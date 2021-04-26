@@ -40,7 +40,7 @@ public class TCPClient {
         return retryPolicy;
     }
 
-    public void connect() {
+    public synchronized void connect() {
         worker = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(worker)
